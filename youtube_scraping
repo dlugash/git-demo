@@ -1,0 +1,50 @@
+import urllib.request
+import os
+import re
+import urllib
+from time import sleep
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+film_name = input() + " film review"
+
+driver = webdriver.Chrome('D:\chromedriver_win32/chromedriver.exe')
+driver.get('https://www.youtube.com')
+wait = WebDriverWait(driver, 3)
+presence = EC.presence_of_element_located
+visible = EC.visibility_of_element_located
+
+# Search for the video.
+sleep(1)
+wait.until(visible((By.NAME, "search_query")))
+driver.find_element_by_name("search_query").click()
+driver.find_element_by_name("search_query").send_keys(film_name)
+driver.find_element_by_id("search-icon-legacy").click()
+
+current_page_url = driver.current_url
+res = urllib.request.urlopen(current_page_url).read()
+
+
+def download_subs(video_url, lang="en"):
+    cmd = [
+        "youtube-dl",
+        "--skip-download",
+        "--write-sub",
+        "--sub-lang",
+        lang,
+        video_url
+    ]
+
+    os.system(" ".join(cmd))
+
+list_of_IDs = re.findall(r'(?<="videoId":").{11}', str(res))
+list_without_duplicates = list(dict.fromkeys(list_of_IDs))
+
+for videoID in list_without_duplicates[:20]:
+    url = "https://www.youtube.com/watch?v=" + str(videoID)
+    download_subs(url)
+
+driver.quit()
